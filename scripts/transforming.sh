@@ -43,6 +43,8 @@ if [ -f "$PARENT_DIR"/transformed_data/transformed.csv ]; then
 fi
 
 touch "$PARENT_DIR"/transformed_data/transformed.csv;
+touch tempfile.txt
+TEMPFILE=tempfile.txt
 TRANFORMED="$PARENT_DIR"/transformed_data/transformed.csv
 echo "station_id;standardname;destination_id;vehicle_name";
 
@@ -50,19 +52,19 @@ echo "station_id;standardname;destination_id;vehicle_name";
 for bestand in "$PARENT_DIR"/"$DIRNAME"/*
 do
     # todo: hier checken of data niet corrupt is <error code="404">Could not find station defd</error>
-    cat "$bestand" >> "$TRANFORMED"
+    cat "$bestand" >> "$TEMPFILE"
 done
 
 # every liveboard on a newline
-sed -i 's/\(<\/liveboard>\)/\1\n/g' "$TRANFORMED"
+sed -i 's/\(<\/liveboard>\)/\1\n/g' "$TEMPFILE"
 
 # ignore stations that have no departures
-grep -E '^.+departures number="[^0][0-9]*".+$' "$TRANFORMED" > more_than_zero.csv
-mv more_than_zero.csv "$TRANFORMED"
+grep -E '^.+departures number="[^0][0-9]*".+$' "$TEMPFILE" > more_than_zero.csv
+mv more_than_zero.csv "$TEMPFILE"
 
 # per liveboard, only use timestamp, station id and station name
 # then per departure, only use todo
 # every liveboard and every departuse gets its own line
-sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TRANFORMED"
+sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TEMPFILE"
 
 # merge departures with their station, then add these to the final file
