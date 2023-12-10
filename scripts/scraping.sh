@@ -44,7 +44,7 @@ STARTTIME=$(date '+%Y%m%d-%H%M%S')
 # Script
 #
 
-### when called the first time, we get a list of all the stations
+### when called the first time, we get a list of all the stations and create a directory for the scraped data to end up
 if [ ! -d "$PARENT_DIR"/"$DIRNAME" ]; then
     mkdir "$PARENT_DIR"/"$DIRNAME";
     configure_stations;
@@ -66,5 +66,6 @@ for station_id in "${station_ids[@]}"
 do
     echo "|$station_id|"
     curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
-    # todo: hierin verwerken dat er misschien een timeout is
 done
+
+chmod 400 "$SCRAPES"; # readonly want dit mag niet aangepast worden
