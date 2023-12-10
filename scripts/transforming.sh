@@ -60,20 +60,9 @@ sed -i 's/\(<\/liveboard>\)/\1\n/g' "$TRANFORMED"
 grep -E '^.+departures number="[^0][0-9]*".+$' "$TRANFORMED" > more_than_zero.csv
 mv more_than_zero.csv "$TRANFORMED"
 
+# per liveboard, only use timestamp, station id and station name
+# then per departure, only use todo
+# every liveboard and every departuse gets its own line
 sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TRANFORMED"
 
-# more formatting
-#vsed -i 's/<liveboard version="[0-9\.]\+" \(timestamp="[0-9]\+"\)><station locationX="[0-9\.\-]\+" locationY="[0-9\.\-]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^<]\+<\/station>/\1 station_id=\$\2\$ station_name=$\3\$ /g' "$TRANFORMED"
-# sed -i 's/\(departure id=\)/\$\1/g' "$TRANFORMED"
-# sed -i 's/<station locationX="[0-9\.\-]\+" locationY="[0-9\.\-]\+" //g;s/URI="[^"]\+" //g;s/^\(timestamp="[0-9]\+"\)[^$]\+\$\([^$]\+\)\$[^$]\+\$\([^$]\+\)\$ <departures number="[0-9]\+">/|| \1 ||  /g;' "$TRANFORMED"
-
-# per liveboard een newline - 's/\(<\/liveboard>\)/\1\n/g'
-
-# while read -r line; do
-#     station_id=$(echo "$line" | grep -Eoh 'station_id=\$[^\$]+' | sed 's/station_id=\$//');
-#     station_name=$(echo "$line" | grep -Eoh 'station_name=\$([^\$]+)' | sed -e 's/station_name=\$//')
-#     # echo "$station_id";
-#     # echo "$station_name"
-# done < "$TRANFORMED"
-
-# 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)/\1;\2;\3;\4;\5;\6;\7;\8;/g'<
+# merge departures with their station, then add these to the final file
