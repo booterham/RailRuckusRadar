@@ -18,15 +18,6 @@ configure_stations () {
     chmod 400 "$PARENT_DIR"/stations/stations.json; # readonly want dit mag niet aangepast worden
 }
 
-# TODO: nog invullen
-
-usage() {
-cat << _EOF_
-Usage: ${0}
-
-_EOF_
-}
-
 
 #
 # Variables
@@ -54,18 +45,12 @@ fi
 # first, get all the station ids from the station.json file
 mapfile -t station_ids < <(grep -Eo '"id":"[^"]+"' "$PARENT_DIR"/stations/stations.json | sed 's/"id":"\([^"]\+\)"/\1/')
 
-# for f in "${station_ids[@]}"
-# do
-#   echo "$f"
-# done
-
 SCRAPES="$PARENT_DIR"/"$DIRNAME"/data-"$STARTTIME".xml
 touch "$SCRAPES"
 
 for station_id in "${station_ids[@]}"
 do
-    echo "|$station_id|"
-    curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
+    curl -s https://api.irail.be/liveboard/?id="$station_id""\n" >> "$SCRAPES"
 done
 
-chmod 400 "$SCRAPES"; # readonly want dit mag niet aangepast worden
+chmod 400 "$SCRAPES"; # readonly because the data shouldnt be changed
