@@ -14,40 +14,51 @@ set -o pipefail # don't hide some errors in pipes
 
 # TODO: nog invullen
 
-usage() { 
+usage() {
 cat << _EOF_
-Usage: ${0} 
+Usage: ${0}
 
 _EOF_
 }
 
 
-
 #
 # Variables
 #
+
 DIRNAME="scrapes"
-STARTTIME=$(date '+%Y%m%d-')
+# using the name of the parent directory so that this script can be executed from any directory (this makes sure that files and directories
+# arent created in the wrong places)
+PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")"/.. ; pwd -P )
+STARTTIME=$(date '+%Y%m%d-%H%M%S')
 
-echo "$STARTTIME"
-
-#
-# Command line parsing - niet nodig hier
-#
 
 #
-# Script proper
+# Script
 #
 
-# bij eerste keer zal de directory voor scrapes nog niet zijn aangemaakt
-# dus we maken deze aan 
-# en scrapen stations
-if [ ! -d ../"$DIRNAME" ]; then
-    mkdir ../$DIRNAME;
-    mkdir ../stations;
-    curl -sS https://api.irail.be/stations/?format=json -o ../stations/stations.json;
-    chmod 400 ../stations/stations.json;
+### when called the first time, we get a list of all the stations
+if [ ! -d "$PARENT_DIR"/"$DIRNAME" ]; then
+    mkdir "$PARENT_DIR"/"$DIRNAME";
+    mkdir "$PARENT_DIR"/stations;
+    curl -sS https://api.irail.be/stations/?format=json -o "$PARENT_DIR"/stations/stations.json;
+    chmod 400 "$PARENT_DIR"/stations/stations.json; # readonly want dit mag niet aangepast worden
 fi
 
+### loop over all the stations and get the current timetable
+# first, get all the station ids from the station.json file
+mapfile -t station_ids < <(grep -Eo '"id":"[^"]+"' "$PARENT_DIR"/stations/stations.json | sed 's/"id":"\([^"]\+\)"/\1/')
 
+# for f in "${station_ids[@]}"
+# do
+#   echo "$f"
+# done
 
+SCRAPES="$PARENT_DIR"/"$DIRNAME"/data-"$STARTTIME".xml
+touch "$SCRAPES"
+
+for station_id in "${station_ids[@]}"
+do
+  echo "|$station_id|"
+  curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
+done
