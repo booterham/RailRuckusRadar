@@ -12,6 +12,12 @@ set -o pipefail # don't hide some errors in pipes
 # Functions
 #
 
+configure_stations () {
+    mkdir "$PARENT_DIR"/stations;
+    curl -sS https://api.irail.be/stations/?format=json -o "$PARENT_DIR"/stations/stations.json;
+    chmod 400 "$PARENT_DIR"/stations/stations.json; # readonly want dit mag niet aangepast worden
+}
+
 # TODO: nog invullen
 
 usage() {
@@ -27,6 +33,7 @@ _EOF_
 #
 
 DIRNAME="scrapes"
+export DIRNAME
 # using the name of the parent directory so that this script can be executed from any directory (this makes sure that files and directories
 # arent created in the wrong places)
 PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")"/.. ; pwd -P )
@@ -40,9 +47,7 @@ STARTTIME=$(date '+%Y%m%d-%H%M%S')
 ### when called the first time, we get a list of all the stations
 if [ ! -d "$PARENT_DIR"/"$DIRNAME" ]; then
     mkdir "$PARENT_DIR"/"$DIRNAME";
-    mkdir "$PARENT_DIR"/stations;
-    curl -sS https://api.irail.be/stations/?format=json -o "$PARENT_DIR"/stations/stations.json;
-    chmod 400 "$PARENT_DIR"/stations/stations.json; # readonly want dit mag niet aangepast worden
+    configure_stations;
 fi
 
 ### loop over all the stations and get the current timetable
@@ -59,6 +64,7 @@ touch "$SCRAPES"
 
 for station_id in "${station_ids[@]}"
 do
-  echo "|$station_id|"
-  curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
+    echo "|$station_id|"
+    curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
+    # todo: hierin verwerken dat er misschien een timeout is
 done
