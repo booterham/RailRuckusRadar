@@ -32,4 +32,24 @@ Hiervoor gebruik ik het script [transforming.sh](scripts/transforming.sh). Dit s
 
 ## 1.3 - Data analyseren
 
+### Overzicht van verwachte en geimplementeerde functionaliteit voor analizing
 
+- [ ] Schrijf een script (Python is hier wellicht meer geschikt voor dan Bash!) dat demonstreert hoe de CSV-data kan geanalyseerd worden.
+
+## 1.4 - Rapport genereren
+
+## Overzicht van verwachte en geimplementeerde functionaliteit voor generating
+
+- [ ] verwerk je de grafieken en berekende statistieken uit de vorige fase in een document.
+- [ ] Je stelt eerst een documentsjabloon op, dat je aan de hand van een script aanvult met de afbeeldingen of cijfermateriaal in tabel-vorm.
+- [ ] nuttig om een timestamp toe te voegen dat aangeeft wanneer het gegenereerd is.
+- [ ] resulterende Markdown-bestand om te zetten in een “afgewerkt” formaat. voorziet minstens één vorm, meerdere zijn optioneel.
+
+## 1.5 - Gehele workflow automatiseren
+
+## Overzicht van verwachte en geimplementeerde functionaliteit voor automating
+
+- [ ] als je nieuwe data ophaalt, die meteen verwerkt wordt in het CSV-bestand en dat een nieuw rapport gegenereerd wordt waarin de laatste nieuwe gegevens verwerkt zijn.
+  - [ ] Schrijf een “overkoepelend” script dat de hele workflow achter elkaar uitvoert
+  - [ ] Schrijf een Makefile die, wanneer er een nieuw bestand met ruwe data toegevoegd wordt, de opeenvolgende stappen van de workflow uitvoert
+  - [ ] Automatiseer het proces met Github Actions: wanneer je een nieuw bestand met ruwe data naar de repository pusht, worden de opeenvolgende stappen van de workflow uitgevoerd en is het resultaat te zien op Github Pages

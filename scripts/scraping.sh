@@ -50,7 +50,7 @@ touch "$SCRAPES"
 
 for station_id in "${station_ids[@]}"
 do
-    curl -s https://api.irail.be/liveboard/?id="$station_id""\n" >> "$SCRAPES"
+    curl -s https://api.irail.be/liveboard/?id="$station_id" >> "$SCRAPES"
 done
 
 chmod 400 "$SCRAPES"; # readonly because the data shouldnt be changed
