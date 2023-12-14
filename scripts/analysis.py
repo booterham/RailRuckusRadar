@@ -105,7 +105,6 @@ def main():
     df = pd.read_csv(data_path, delimiter=';', header=0)
     df.drop_duplicates(subset=['timestamp', 'stationId', 'destId', 'departureTime', 'vehicleName'], keep='last',
                        inplace=True)
-    print(df[:5].to_string())
 
     # generate statistics of the data
     make_plot(find_late_departures(df, 10), 'Late Departures', 'Minutes of delay', 'Station', 'late_departures')
