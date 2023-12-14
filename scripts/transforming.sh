@@ -50,8 +50,11 @@ TRANSFORMED="$PARENT_DIR"/transformed_data/transformed.csv
 
 for bestand in "$PARENT_DIR"/"$DIRNAME"/*
 do
-
-    cat "$bestand" >> "$TEMPFILE"
+    # als het bestand nog niet volledig ingeladen is op dit moment, door scraping.sh, sla het over
+    inhoud="$(cat "$bestand")"
+    if [[ $inhoud == *"</liveboard>" ]];then
+        echo "$inhoud" >> "$TEMPFILE"
+    fi
 done
 
 # remove possible errors
@@ -73,12 +76,12 @@ sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locati
 echo "timestamp;stationId;stationName;departureId;delay;canceled;left;isExtra;destId;destName;departureTime;vehicleName;platform" >> "$TRANSFORMED"
 station_info=""
 while read -r line; do
-if [[ $line == ";"* ]];then
-    departureInfo="$station_info$line";
-    echo "$departureInfo" >> "$TRANSFORMED"
-else
-    station_info="$line";
-fi
+    if [[ $line == ";"* ]];then
+        departureInfo="$station_info$line";
+        echo "$departureInfo" >> "$TRANSFORMED"
+    else
+        station_info="$line";
+    fi
 done < "$TEMPFILE"
 rm "$TEMPFILE"
 

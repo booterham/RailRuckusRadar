@@ -11,8 +11,8 @@ Hiervoor gebruik ik het script [scraping.sh](scripts/scraping.sh). Ik verzamel r
 - [x] Het script neemt geen argumenten
 - [x] Het script produceert geen uitvoer op stdout of stderr
 - [x] De directory voor de gescrapete data is instelbaar ahv een variabele
-- [ ] Eventuele informatieve boodschappen over het verloop van de download, foutboodschappen, enz. worden opgeslagen in een logbestand.
-- [ ] het script wordt op regelmatige tijdstippen uitgevoerd adhv cron
+- [x] Eventuele informatieve boodschappen over het verloop van de download, foutboodschappen, enz. worden opgeslagen in een logbestand.
+- [x] het script wordt op regelmatige tijdstippen uitgevoerd adhv cron
 - [x] Het resultaat van dit proces zal een directory zijn met vele bestanden in JSON, HTML, XML of een ander tekstgebaseerd bestandsformaat.
 - [x] ruwe data nooit gewijzigd mag worden
   - [x] ruwe data is read-only
@@ -28,7 +28,7 @@ Hiervoor gebruik ik het script [transforming.sh](scripts/transforming.sh). Dit s
 - [x] Het resultaat is 1 CSL-bestand.
 - [x] Het CSV-bestand heeft een hoofding met namen van alle variabelen.
 - [x] Elke observatie vormt een aparte regel.
-- [ ] Goed omgaan met foutieve/ontbrekende data
+- [x] Goed omgaan met foutieve/ontbrekende data
 
 ## 1.3 - Data analyseren
 

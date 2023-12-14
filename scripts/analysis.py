@@ -41,11 +41,11 @@ def find_most(df, key_col, value_col, n):
 
 
 def find_late_departures(df, i):
-    return [[x[0], x[1] / 60] for x in find_most(df, 'stationId', 'delay', i)]
+    return [[x[0], x[1] / 60] for x in find_most(df, 'stationName', 'delay', i)]
 
 
 def find_late_arrivals(df, i):
-    return [[x[0], x[1] / 60] for x in find_most(df, 'destId', 'delay', i)]
+    return [[x[0], x[1] / 60] for x in find_most(df, 'destName', 'delay', i)]
 
 
 def find_late_trains(df, i):
@@ -76,7 +76,7 @@ def make_plot(arr, title, yax, xax, filename):
     plt.ylabel(yax)
     plt.title('Top ' + str(len(arr)) + ' ' + title)
 
-    plt.gcf().set_size_inches(len(arr), 10)
+    plt.gcf().set_size_inches(len(arr) + 2, 10)
     plt.gcf().autofmt_xdate()
 
     # save plot in plots directory
@@ -107,15 +107,14 @@ def main():
                        inplace=True)
 
     # generate statistics of the data
-    make_plot(find_late_departures(df, 10), 'Late Departures', 'Minutes of delay', 'Station', 'late_departures')
-    make_plot(find_late_arrivals(df, 10), 'Late Arrivals', 'Minutes of delay', 'Station', 'late_arrivals')
-    make_plot(find_late_trains(df, 10), 'Late Trains', 'Minutes of delay', 'Train', 'late_trains')
-    make_plot(find_most_cancels_station(df, 10), 'Stations with most canceled trains', 'Amount of cancelations', 'Station',
+    make_plot(find_late_departures(df, 10), 'Stations with Late Departure Time', 'Total Amount of Minutes of Delay', 'Station Name', 'late_departures')
+    make_plot(find_late_arrivals(df, 10), 'Stations with Late Arrival Time', 'Total Amount of Minutes of Delay', 'Station Name', 'late_arrivals')
+    make_plot(find_late_trains(df, 10), 'Trains with Late Arrival Time', 'Total Amount of Minutes of Delay', 'Train Name', 'late_trains')
+    make_plot(find_most_cancels_station(df, 10), 'Stations with Highest Amount of Canceled Trains', 'Amount of Cancelations', 'Station Name',
               'cancelations_at_departure')
-    make_plot(find_most_cancels_train(df, 10), 'Trains that have most often been canceled', 'Amount of cancelations',
+    make_plot(find_most_cancels_train(df, 10), 'Trains That Have Most Often Been Canceled', 'Amount of cancelations',
               'Vehicle Name',
               'train_cancelations')
-
 
 if __name__ == "__main__":
     main()
