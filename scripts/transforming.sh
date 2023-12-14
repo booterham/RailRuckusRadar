@@ -70,7 +70,7 @@ mv more_than_zero.csv "$TEMPFILE"
 sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TEMPFILE"
 
 # merge departures with their station, then add these to the final file
-echo "timestamp; stationId; stationName; departureId; delay; canceled; left; isExtra; destId; destName; departureTime; vehicleName, platform" >> "$TRANSFORMED"
+echo "timestamp;stationId;stationName;departureId;delay;canceled;left;isExtra;destId;destName;departureTime;vehicleName;platform" >> "$TRANSFORMED"
 station_info=""
 while read -r line; do
 if [[ $line == ";"* ]];then
@@ -80,5 +80,11 @@ else
     station_info="$line";
 fi
 done < "$TEMPFILE"
+rm "$TEMPFILE"
+
+# remove duplicate lines
+mv "$TRANSFORMED" "$TEMPFILE"
+uniq "$TEMPFILE" "$TRANSFORMED"
+
 
 rm "$TEMPFILE"

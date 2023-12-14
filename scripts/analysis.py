@@ -4,6 +4,8 @@ import datetime
 import matplotlib.pyplot as plt
 import os
 import shutil
+from pathlib import Path
+import pandas as pd
 
 
 def find_begin_and_endtime():
@@ -22,37 +24,39 @@ def find_begin_and_endtime():
             [end, datetime.datetime.utcfromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')]]
 
 
-def find_most(name, val, i):
-    with open('../transformed_data/transformed.csv') as csvfile:
-        csv_reader = csv.reader(csvfile, delimiter=';')
-        delay_dict = {}
-        next(csv_reader)  # skip header
-        for row in csv_reader:
-            if row[val] != "0":
-                if row[name] in delay_dict:
-                    delay_dict[row[name]] = delay_dict[row[name]] + int(row[val])
-                else:
-                    delay_dict[row[name]] = int(row[val])
+def find_most(df, key_col, value_col, n):
+    delay_dict = {}
+    for row in df.index:
+        if df[value_col][row] != 0:
+            key = df[key_col][row]
+            value = df[value_col][row]
+            if key in delay_dict:
+                delay_dict[key] = delay_dict[key] + value
+            else:
+                delay_dict[key] = value
     # looking for top n. if n is bigger than list size, return full list
-    if len(delay_dict.items()) < i:
+    if len(delay_dict.items()) < n:
         return sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)
-    return sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)[:i]
+    return sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)[:n]
 
 
-def find_late_departures(i):
-    return [[x[0], x[1] / 60] for x in find_most(2, 4, i)]
+def find_late_departures(df, i):
+    return [[x[0], x[1] / 60] for x in find_most(df, 'stationId', 'delay', i)]
 
 
-def find_late_arrivals(i):
-    return [[x[0], x[1] / 60] for x in find_most(9, 4, i)]
+def find_late_arrivals(df, i):
+    return [[x[0], x[1] / 60] for x in find_most(df, 'destId', 'delay', i)]
 
 
-def find_late_trains(i):
-    return [[x[0], x[1] / 60] for x in find_most(11, 4, i)]
+def find_late_trains(df, i):
+    return [[x[0], x[1] / 60] for x in find_most(df, 'vehicleName', 'delay', i)]
 
 
-def find_most_cancels(i):
-    return find_most(2, 5, 10)
+def find_most_cancels_station(df, i):
+    return find_most(df, 'stationName', 'canceled', i)
+
+def find_most_cancels_train(df, i):
+    return find_most(df, 'vehicleName', 'canceled', i)
 
 
 def make_plot(arr, title, yax, xax, filename):
@@ -76,23 +80,42 @@ def make_plot(arr, title, yax, xax, filename):
     plt.gcf().autofmt_xdate()
 
     # save plot in plots directory
-    path = ''.join(['../plots/', 'top', str(len(arr)), '_', filename])
+    img_dir = str(
+        Path(os.path.dirname(os.path.realpath(__file__))).parent.absolute()) + '/plots/'
+    path = ''.join([img_dir, 'top', str(len(arr)), '_', filename])
     plt.savefig(path)
     plt.clf()
 
 
 def main():
     # remove pre existing directory with plots to create new ones
-    if os.path.isdir('../plots/'):
-        shutil.rmtree('../plots/')
+    img_dir = str(
+        Path(os.path.dirname(os.path.realpath(__file__))).parent.absolute()) + '/plots/'
+    if os.path.isdir(img_dir):
+        shutil.rmtree(img_dir)
     # make the plot dir
-    os.mkdir('../plots/')
+    os.mkdir(img_dir)
+
+    # get the data from csv file and remove duplicate lines
+    # even though every observation is on a new line, it's possible that we ask a liveboard multiple times for the same train
+    # in that case, the delay, cancelation, platfrom etc might be updated, We only want to look at the most recent status we got from a train
+    data_path = str(
+        Path(os.path.dirname(os.path.realpath(__file__))).parent.absolute()) + '/transformed_data/transformed.csv'
+
+    df = pd.read_csv(data_path, delimiter=';', header=0)
+    df.drop_duplicates(subset=['timestamp', 'stationId', 'destId', 'departureTime', 'vehicleName'], keep='last',
+                       inplace=True)
+    print(df[:5].to_string())
+
     # generate statistics of the data
-    make_plot(find_late_departures(10), 'Late Departures', 'Minutes of delay', 'Station', 'late_departures')
-    make_plot(find_late_arrivals(10), 'Late Arrivals', 'Minutes of delay', 'Station', 'late_arrivals')
-    make_plot(find_late_trains(10), 'Late Trains', 'Minutes of delay', 'Train', 'late_trains')
-    make_plot(find_most_cancels(10), 'Stations with most canceled trains', 'Amount of cancelations', 'Station',
-              'most_cancelations')
+    make_plot(find_late_departures(df, 10), 'Late Departures', 'Minutes of delay', 'Station', 'late_departures')
+    make_plot(find_late_arrivals(df, 10), 'Late Arrivals', 'Minutes of delay', 'Station', 'late_arrivals')
+    make_plot(find_late_trains(df, 10), 'Late Trains', 'Minutes of delay', 'Train', 'late_trains')
+    make_plot(find_most_cancels_station(df, 10), 'Stations with most canceled trains', 'Amount of cancelations', 'Station',
+              'cancelations_at_departure')
+    make_plot(find_most_cancels_train(df, 10), 'Trains that have most often been canceled', 'Amount of cancelations',
+              'Vehicle Name',
+              'train_cancelations')
 
 
 if __name__ == "__main__":
