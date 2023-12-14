@@ -14,7 +14,7 @@ Hiervoor gebruik ik het script [scraping.sh](scripts/scraping.sh). Ik verzamel r
 - [ ] Eventuele informatieve boodschappen over het verloop van de download, foutboodschappen, enz. worden opgeslagen in een logbestand.
 - [ ] het script wordt op regelmatige tijdstippen uitgevoerd adhv cron
 - [x] Het resultaat van dit proces zal een directory zijn met vele bestanden in JSON, HTML, XML of een ander tekstgebaseerd bestandsformaat.
-- [x]  ruwe data nooit gewijzigd mag worden
+- [x] ruwe data nooit gewijzigd mag worden
   - [x] ruwe data is read-only
 
 ## 1.2 - Data transformeren
@@ -28,13 +28,15 @@ Hiervoor gebruik ik het script [transforming.sh](scripts/transforming.sh). Dit s
 - [x] Het resultaat is 1 CSL-bestand.
 - [x] Het CSV-bestand heeft een hoofding met namen van alle variabelen.
 - [x] Elke observatie vormt een aparte regel.
-- [ ] Soms te maken hebt met ontbrekende of corrupte data.
+- [ ] Goed omgaan met foutieve/ontbrekende data
 
 ## 1.3 - Data analyseren
 
 ### Overzicht van verwachte en geimplementeerde functionaliteit voor analizing
 
-- [ ] Schrijf een script (Python is hier wellicht meer geschikt voor dan Bash!) dat demonstreert hoe de CSV-data kan geanalyseerd worden.
+Ik heb een python script geschreven dat kijkt naar het csv file en daaruit haalt welke treinen het meeste vertraging hebben, welke stations (aankomst en vertrek) het meest vertraging hebben en welke stations het vaakst treinen hebben die gecanceld zijn. Hiervan worden grafieken gemaakt en deze worden opgeslagen in een directory, genaamd `plots`.
+
+- [x] Schrijf een script (Python is hier wellicht meer geschikt voor dan Bash!) dat demonstreert hoe de CSV-data kan geanalyseerd worden.
 
 ## 1.4 - Rapport genereren
 
