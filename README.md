@@ -48,11 +48,13 @@ Ik heb een python script geschreven dat kijkt naar het csv file en daaruit haalt
 - [x] nuttig om een timestamp toe te voegen dat aangeeft wanneer het gegenereerd is.
 - [ ] resulterende Markdown-bestand om te zetten in een “afgewerkt” formaat. voorziet minstens één vorm, meerdere zijn optioneel.
 
+zichtbaar via [deze link](https://booterham.github.io/booterham/)
+
 ## 1.5 - Gehele workflow automatiseren
 
 ## Overzicht van verwachte en geimplementeerde functionaliteit voor automating
 
-- [ ] als je nieuwe data ophaalt, die meteen verwerkt wordt in het CSV-bestand en dat een nieuw rapport gegenereerd wordt waarin de laatste nieuwe gegevens verwerkt zijn.
-  - [ ] Schrijf een “overkoepelend” script dat de hele workflow achter elkaar uitvoert
+- [x] als je nieuwe data ophaalt, die meteen verwerkt wordt in het CSV-bestand en dat een nieuw rapport gegenereerd wordt waarin de laatste nieuwe gegevens verwerkt zijn.
+  - [x] Schrijf een “overkoepelend” script dat de hele workflow achter elkaar uitvoert
   - [ ] Schrijf een Makefile die, wanneer er een nieuw bestand met ruwe data toegevoegd wordt, de opeenvolgende stappen van de workflow uitvoert
   - [ ] Automatiseer het proces met Github Actions: wanneer je een nieuw bestand met ruwe data naar de repository pusht, worden de opeenvolgende stappen van de workflow uitgevoerd en is het resultaat te zien op Github Pages
