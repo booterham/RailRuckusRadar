@@ -36,7 +36,7 @@ def find_most(df, key_col, value_col, n):
     # looking for top n. if n is bigger than list size, return full list
     if len(delay_dict.items()) < n:
         return sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)
-    return sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)[:n]
+    return list(sorted(delay_dict.items(), key=lambda x: x[1], reverse=True)[:n])
 
 
 def find_late_departures(df, i):
@@ -89,7 +89,7 @@ def analyse(arr, title, yax, xax, filename):
     file_path = ''.join([img_dir, 'top', str(len(arr)), '_', filename, '.csv'])
     f = open(file_path, "x")
     for item in arr:
-        f.write(str(item) + '\n')
+        f.write(str(list(item)) + '\n')
     f.close()
 
 
