@@ -29,6 +29,7 @@ Hiervoor gebruik ik het script [transforming.sh](scripts/transforming.sh). Dit s
 - [x] Het CSV-bestand heeft een hoofding met namen van alle variabelen.
 - [x] Elke observatie vormt een aparte regel.
 - [x] Goed omgaan met foutieve/ontbrekende data
+- [x] Gebruikt enkel nieuwere files om sneller te werken
 
 ## 1.3 - Data analyseren
 
@@ -42,9 +43,9 @@ Ik heb een python script geschreven dat kijkt naar het csv file en daaruit haalt
 
 ## Overzicht van verwachte en geimplementeerde functionaliteit voor generating
 
-- [ ] verwerk je de grafieken en berekende statistieken uit de vorige fase in een document.
-- [ ] Je stelt eerst een documentsjabloon op, dat je aan de hand van een script aanvult met de afbeeldingen of cijfermateriaal in tabel-vorm.
-- [ ] nuttig om een timestamp toe te voegen dat aangeeft wanneer het gegenereerd is.
+- [x] verwerk je de grafieken en berekende statistieken uit de vorige fase in een document.
+- [x] Je stelt eerst een documentsjabloon op, dat je aan de hand van een script aanvult met de afbeeldingen of cijfermateriaal in tabel-vorm.
+- [x] nuttig om een timestamp toe te voegen dat aangeeft wanneer het gegenereerd is.
 - [ ] resulterende Markdown-bestand om te zetten in een “afgewerkt” formaat. voorziet minstens één vorm, meerdere zijn optioneel.
 
 ## 1.5 - Gehele workflow automatiseren

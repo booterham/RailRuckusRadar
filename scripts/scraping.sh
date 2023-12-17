@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Script name -- purpose
+# Scraping -- get the liveboard from every trainstation in Belgium and put the returned info in an .xml file
 #
 # Author: Bauke Blomme
 
@@ -33,7 +33,6 @@ configure_stations () {
 #
 
 DIRNAME="scrapes"
-export DIRNAME
 # using the name of the parent directory so that this script can be executed from any directory (this makes sure that files and directories
 # arent created in the wrong places)
 PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")"/.. ; pwd -P );
@@ -45,19 +44,17 @@ STARTTIME=$(date '+%Y%m%d-%H%M%S');
 #
 
 ### when called the first time, we get a list of all the stations and create a directory for the scraped data to end up in
-if [ ! -d "$PARENT_DIR"/stations ]; then
-    echo "no stations dir"
-    mkdir "$PARENT_DIR"/stations;
+if [ ! -d "$PARENT_DIR/stations" ]; then
+    mkdir "$PARENT_DIR/stations";
 fi
 
-if [ ! -f "$PARENT_DIR"/stations/stations.json ]; then
-echo "no stations file"
+if [ ! -f "$PARENT_DIR/stations/stations.json" ]; then
     configure_stations;
 fi
 
 ### if a directory for scrapes doesn't exist yet, create it
-if [ ! -d "$PARENT_DIR"/"$DIRNAME" ]; then
-    mkdir "$PARENT_DIR"/"$DIRNAME";
+if [ ! -d "$PARENT_DIR/$DIRNAME" ]; then
+    mkdir "$PARENT_DIR/$DIRNAME";
 fi
 
 ### loop over all the stations and get the current timetable
@@ -66,7 +63,7 @@ mapfile -t station_ids < <(grep -Eo '"id":"[^"]+"' "$PARENT_DIR"/stations/statio
 
 
 
-SCRAPES="$PARENT_DIR"/"$DIRNAME"/data-"$STARTTIME".xml;
+SCRAPES="$PARENT_DIR/$DIRNAME/data-$STARTTIME.xml";
 touch "$SCRAPES";
 
 for station_id in "${station_ids[@]}"

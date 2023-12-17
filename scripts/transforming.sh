@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Script name -- purpose
+# Transforming -- use the .xml files received by scraping.sh to generate a csv file with the interesting info about the stations
 #
 # Author: Bauke Blomme
 
@@ -25,7 +25,7 @@ _EOF_
 
 PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")"/.. ; pwd -P )
 # can't use source scraping.sh here because that'll execute all of the code again. instead i'm using grep to get the hardcoded dirname
-DIRNAME=$(grep 'DIRNAME=' "$PARENT_DIR"/scripts/scraping.sh | sed 's/^.*DIRNAME="\([^"]\+\)".*$/\1/')
+DIRNAME=$(grep 'DIRNAME=' "$PARENT_DIR/scripts/scraping.sh" | sed 's/^.*DIRNAME="\([^"]\+\)".*$/\1/')
 
 #
 # Script proper
@@ -33,29 +33,35 @@ DIRNAME=$(grep 'DIRNAME=' "$PARENT_DIR"/scripts/scraping.sh | sed 's/^.*DIRNAME=
 
 ### check if there's already a directory that contains transformed data
 ### if this is the case, delete everything and start over
-# todo
-if [ ! -d "$PARENT_DIR"/transformed_data/ ]; then
-    mkdir "$PARENT_DIR"/transformed_data/;
-fi
 
-if [ -f "$PARENT_DIR"/transformed_data/transformed.csv ]; then
-    rm "$PARENT_DIR"/transformed_data/transformed.csv;
-fi
-
-touch "$PARENT_DIR"/transformed_data/transformed.csv;
-touch tempfile.txt
 TEMPFILE=tempfile.txt
-TRANSFORMED="$PARENT_DIR"/transformed_data/transformed.csv
+TRANSFORMED="$PARENT_DIR/transformed_data/transformed.csv"
 
 
-for bestand in "$PARENT_DIR"/"$DIRNAME"/*
+if [ ! -d "$PARENT_DIR/transformed_data/" ]; then
+    mkdir "$PARENT_DIR/transformed_data/";
+    
+fi
+
+touch "$TEMPFILE"
+
+for bestand in "$PARENT_DIR/$DIRNAME/"*
 do
-    # als het bestand nog niet volledig ingeladen is op dit moment, door scraping.sh, sla het over
-    inhoud="$(cat "$bestand")"
-    if [[ $inhoud == *"</liveboard>" ]];then
-        echo "$inhoud" >> "$TEMPFILE"
+    # check if file is newer than transformed.csv, if transformed.csv doesnt exist, every file will be newer
+    if [ "$bestand" -nt "$TRANSFORMED" ]; then
+        # check if file has been fully loaded
+        inhoud="$(cat "$bestand")"
+        if [[ $inhoud == *"</liveboard>" ]];then
+            echo "$inhoud" >> "$TEMPFILE"
+        fi
     fi
 done
+
+# if tempfile is empty, there were no new files. remove tempfile and end script
+if [ ! -s "$TEMPFILE" ]; then
+    rm "$TEMPFILE";
+    exit 0;
+fi
 
 # remove possible errors
 sed -i 's/<error code="[0-9]\+">[^<>]\+<[^<>]\+>//g' "$TEMPFILE"
@@ -72,8 +78,12 @@ mv more_than_zero.csv "$TEMPFILE"
 # every liveboard and every departuse gets its own line
 sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TEMPFILE"
 
+# add a header if the file was previously empty
+if [ ! -s "$TRANSFORMED" ]; then
+    echo "timestamp;stationId;stationName;departureId;delay;canceled;left;isExtra;destId;destName;departureTime;vehicleName;platform" >> "$TRANSFORMED"
+fi
+
 # merge departures with their station, then add these to the final file
-echo "timestamp;stationId;stationName;departureId;delay;canceled;left;isExtra;destId;destName;departureTime;vehicleName;platform" >> "$TRANSFORMED"
 station_info=""
 while read -r line; do
     if [[ $line == ";"* ]];then
@@ -88,6 +98,5 @@ rm "$TEMPFILE"
 # remove duplicate lines
 mv "$TRANSFORMED" "$TEMPFILE"
 uniq "$TEMPFILE" "$TRANSFORMED"
-
 
 rm "$TEMPFILE"

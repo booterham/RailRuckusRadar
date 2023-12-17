@@ -8,8 +8,8 @@ from pathlib import Path
 import pandas as pd
 
 
-def find_begin_and_endtime():
-    with open('../transformed_data/transformed.csv') as csvfile:
+def find_begin_and_endtime(data_path):
+    with open(data_path) as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=';')
         next(csv_reader)  # skip header
         firstline = next(csv_reader)
@@ -20,8 +20,7 @@ def find_begin_and_endtime():
                 begin = int(row[0])
             elif int(row[0]) > end:
                 end = int(row[0])
-    return [[begin, datetime.datetime.utcfromtimestamp(begin).strftime('%Y-%m-%d %H:%M:%S')],
-            [end, datetime.datetime.utcfromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')]]
+    return datetime.datetime.utcfromtimestamp(begin).strftime('%Y-%m-%d %H:%M:%S'), datetime.datetime.utcfromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def find_most(df, key_col, value_col, n):
@@ -53,13 +52,13 @@ def find_late_trains(df, i):
 
 
 def find_most_cancels_station(df, i):
-    return find_most(df, 'stationName', 'canceled', i)
+    return [x for x in find_most(df, 'stationName', 'canceled', i)]
 
 def find_most_cancels_train(df, i):
-    return find_most(df, 'vehicleName', 'canceled', i)
+    return [x for x in find_most(df, 'vehicleName', 'canceled', i)]
 
 
-def make_plot(arr, title, yax, xax, filename):
+def analyse(arr, title, yax, xax, filename):
     # check if list contains elements
     if len(arr) == 0:
         return None
@@ -82,9 +81,16 @@ def make_plot(arr, title, yax, xax, filename):
     # save plot in plots directory
     img_dir = str(
         Path(os.path.dirname(os.path.realpath(__file__))).parent.absolute()) + '/plots/'
-    path = ''.join([img_dir, 'top', str(len(arr)), '_', filename])
-    plt.savefig(path)
+    img_path = ''.join([img_dir, 'top', str(len(arr)), '_', filename])
+    plt.savefig(img_path)
     plt.clf()
+
+    # write the info to a csv
+    file_path = ''.join([img_dir, 'top', str(len(arr)), '_', filename, '.csv'])
+    f = open(file_path, "x")
+    for item in arr:
+        f.write(str(item) + '\n')
+    f.close()
 
 
 def main():
@@ -107,14 +113,20 @@ def main():
                        inplace=True)
 
     # generate statistics of the data
-    make_plot(find_late_departures(df, 10), 'Stations with Late Departure Time', 'Total Amount of Minutes of Delay', 'Station Name', 'late_departures')
-    make_plot(find_late_arrivals(df, 10), 'Stations with Late Arrival Time', 'Total Amount of Minutes of Delay', 'Station Name', 'late_arrivals')
-    make_plot(find_late_trains(df, 10), 'Trains with Late Arrival Time', 'Total Amount of Minutes of Delay', 'Train Name', 'late_trains')
-    make_plot(find_most_cancels_station(df, 10), 'Stations with Highest Amount of Canceled Trains', 'Amount of Cancelations', 'Station Name',
+    analyse(find_late_departures(df, 10), 'Stations with Late Departure Time', 'Total Amount of Delay in Minutes', 'Station Name', 'late_departures')
+    analyse(find_late_arrivals(df, 10), 'Stations with Late Arrival Time', 'Total Amount of Delay in Minutes', 'Station Name', 'late_arrivals')
+    analyse(find_late_trains(df, 10), 'Trains with Late Arrival Time', 'Total Amount of Delay in Minutes', 'Train Name', 'late_trains')
+    analyse(find_most_cancels_station(df, 10), 'Stations with Highest Amount of Canceled Trains', 'Amount of Cancelations', 'Station Name',
               'cancelations_at_departure')
-    make_plot(find_most_cancels_train(df, 10), 'Trains That Have Most Often Been Canceled', 'Amount of cancelations',
+    analyse(find_most_cancels_train(df, 10), 'Trains That Have Most Often Been Canceled', 'Amount of cancelations',
               'Vehicle Name',
               'train_cancelations')
+    
+    # save info about the time range
+    f = open(''.join([img_dir, "dates.txt"]), "x")
+    for date in find_begin_and_endtime(data_path):
+        f.write(date + '\n')
+    f.close()
 
 if __name__ == "__main__":
     main()
