@@ -16,6 +16,7 @@ def find_begin_and_endtime(data_path):
         begin = int(firstline[0])
         end = int(firstline[0])
         for row in csv_reader:
+            print(row)
             if int(row[0]) < begin:
                 begin = int(row[0])
             elif int(row[0]) > end:
