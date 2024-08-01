@@ -46,10 +46,13 @@ TRANSFORMED="$PARENT_DIR/$TRANSFORMED_DATA_DIR/$TRANSFORMED_DATA_FILE"
 
 if [ ! -d "$PARENT_DIR/$TRANSFORMED_DATA_DIR/" ]; then
     mkdir "$PARENT_DIR/$TRANSFORMED_DATA_DIR/"
-
 fi
 
-rm "$TEMPFILE"
+if [ -f "$TRANSFORMED" ]; then
+    rm "$TRANSFORMED"
+    touch "$TRANSFORMED"
+fi
+
 touch "$TEMPFILE"
 
 for bestand in "$PARENT_DIR/$DIRNAME/"*; do
@@ -84,37 +87,44 @@ sed -i 's/<departure id="[^"]\+" delay="\([^"]\+\)" canceled="\([^"]\+\)" left="
 # formatting departure time, vehiclename, platform normal, platform and occupancy
 sed -i 's/<time formatted[^<>]\+>\([^<>]\+\)<[^<>]\+><vehicle[^<>]\+>\([^<>]\+\)<\/vehicle><platform normal="\([^"]\+\)">\([^<>]\+\)<\/platform><occupancy[^<>]\+>\([^<>]\+\)<\/occupancy>.*$/;\1;\2;\3;\4;\5/g' "$TEMPFILE"
 
+# removing the work "unknown" for unknown values and just put an empty string
+sed -i 's/unknown\|?//g' "$TEMPFILE"
+
 # formatting stations with zero departures
 sed -i 's/<departures number="0"><\/departures>/\nnoDepartures/g' "$TEMPFILE"
 
 # remove departure numbers and end of departures section
 sed -i 's/<departures number="[0-9]\+">//g;s///g' "$TEMPFILE"
 
-# # per liveboard, only use timestamp, station id and station name
-# # then per departure, only use departureId; delay; canceled; left; isExtra; destId; destName; vehicleName, platform
-# # every liveboard and every departuse gets its own line
-# sed -i 's/<liveboard version="[0-9\.]\+" timestamp="\([0-9]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>/\1;\2;\3/g;s/<departure id="\([0-9]\+\)" /\n;\1;/g;s/delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station locationX="[^"]\+" locationY="[^"]\+" id="\([^"]\+\)" URI="[^"]\+" standardname="\([^"]\+\)">[^>]\+><[^>]\+>\([0-9]\+\)<\/time><[^>]\+>\([^<]\+\)[^>]\+><[^"]\+"\([^"]\+\)">[^>]\+><[^<>]\+>[^<>]\+<[^<>]\+><[^<>]\+>/\1;\2;\3;\4;\5;\6;\7;\8;\9/g;s/<\/departures><\/liveboard>//g' "$TEMPFILE"
+# add a header to transformed data file
+if [ ! -s "$TRANSFORMED" ]; then
+    echo "depID;depLocX;depLocY;depName;delay;canceled;left;isExtra;liveURL;destID;destLocX;destLocY;destName;depTime;vehicleID;platformNormal;platform;occupancy" >>"$TRANSFORMED"
+fi
 
-# # add a header if the file was previously empty
-# if [ ! -s "$TRANSFORMED" ]; then
-#     echo "timestamp;stationId;stationName;departureId;delay;canceled;left;isExtra;destId;destName;departureTime;vehicleName;platform" >>"$TRANSFORMED"
-# fi
+# remove empty lines
+sed -i '/^\s*$/d' "$TEMPFILE"
 
-# # merge departures with their station, then add these to the final file
-# station_info=""
-# while read -r line; do
-#     if [[ $line == ";"* ]]; then
-#         departureInfo="$station_info$line"
-#         echo "$departureInfo"
-#         echo "$departureInfo" >>"$TRANSFORMED"
-#     else
-#         station_info="$line"
-#     fi
-# done <"$TEMPFILE"
-# rm "$TEMPFILE"
+# merge departures with their station, then add these to the final file
+stationInfo=""
+while read -r line; do
+    echo "line$line line"
+    if [[ "$line" == "BE"* ]]; then
+        stationInfo="$line"
+    else
+        if [[ "$line" == "noDepartures" ]]; then
+            echo "$stationInfo;;;;;;;;;;;;;;" >>"$TRANSFORMED"
+        else
+            echo "$stationInfo;$line" >>"$TRANSFORMED"
+        fi
+    fi
+done <"$TEMPFILE"
+rm "$TEMPFILE"
 
 # # remove duplicate lines
 # mv "$TRANSFORMED" "$TEMPFILE"
 # uniq "$TEMPFILE" "$TRANSFORMED"
+
+# for liveboard info about the same train, only keep the last one since this one will have most up-to-date information about delays etc.
+# todo
 
 # rm "$TEMPFILE"
