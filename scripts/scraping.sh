@@ -10,8 +10,33 @@ set -o pipefail # don't hide some errors in pipes
 set +e          # disable immediate exit on errors
 
 #
+# Variables
+#
+
+DIRNAME="scrapes"
+# using the name of the parent directory so that this script can be executed from any directory (this makes sure that files and directories
+# arent created in the wrong places)
+PARENT_DIR=$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"/..
+    pwd -P
+)
+STARTTIME=$(date '+%Y%m%d-%H%M%S')
+
+#
 # Functions
 #
+
+configure_directories() {
+    ### when called the first time, we get a list of all the stations and create a directory for the scraped data to end up in
+    if [ ! -d "$PARENT_DIR/stations" ]; then
+        mkdir "$PARENT_DIR/stations"
+    fi
+
+    ### if a directory for scrapes doesn't exist yet, create it
+    if [ ! -d "$PARENT_DIR/$DIRNAME" ]; then
+        mkdir "$PARENT_DIR/$DIRNAME"
+    fi
+}
 
 configure_stations() {
     touch "$PARENT_DIR"/stations/stations.json
@@ -28,34 +53,13 @@ configure_stations() {
 }
 
 #
-# Variables
-#
-
-DIRNAME="scrapes"
-# using the name of the parent directory so that this script can be executed from any directory (this makes sure that files and directories
-# arent created in the wrong places)
-PARENT_DIR=$(
-    cd "$(dirname "${BASH_SOURCE[0]}")"/..
-    pwd -P
-)
-STARTTIME=$(date '+%Y%m%d-%H%M%S')
-
-#
 # Script
 #
 
-### when called the first time, we get a list of all the stations and create a directory for the scraped data to end up in
-if [ ! -d "$PARENT_DIR/stations" ]; then
-    mkdir "$PARENT_DIR/stations"
-fi
+configure_directories
 
 if [ ! -f "$PARENT_DIR/stations/stations.json" ]; then
     configure_stations
-fi
-
-### if a directory for scrapes doesn't exist yet, create it
-if [ ! -d "$PARENT_DIR/$DIRNAME" ]; then
-    mkdir "$PARENT_DIR/$DIRNAME"
 fi
 
 ### loop over all the stations and get the current timetable
