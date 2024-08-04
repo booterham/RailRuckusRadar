@@ -9,17 +9,6 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide some errors in pipes
 
 #
-# Functions
-#
-
-usage() {
-    cat <<_EOF_
-Usage: ${0}
-
-_EOF_
-}
-
-#
 # Variables
 #
 
@@ -30,116 +19,128 @@ PARENT_DIR=$(
 TEMPFILE=tempfile.txt
 TRANSFORMED_DATA_DIR=transformed_data
 TRANSFORMED_DATA_FILE=transformed.csv
+TRANSFORMED="$PARENT_DIR/$TRANSFORMED_DATA_DIR/$TRANSFORMED_DATA_FILE"
 
 # can't use source scraping.sh here because that'll execute all of the code again. instead i'm using grep to get the hardcoded dirname
 DIRNAME=$(grep 'DIRNAME=' "$PARENT_DIR/scripts/scraping.sh" | sed 's/^.*DIRNAME="\([^"]\+\)".*$/\1/')
 
 #
+# Functions
+#
+
+set_up_files() {
+    # add transformed data directory of it doesn't exist yet
+    if [ ! -d "$PARENT_DIR/$TRANSFORMED_DATA_DIR/" ]; then
+        mkdir "$PARENT_DIR/$TRANSFORMED_DATA_DIR/"
+    fi
+
+    # empty transofrmed file
+    if [ -f "$TRANSFORMED" ]; then
+        echo "" >"$TRANSFORMED"
+    fi
+
+    # create temporary file to edit lines in
+    touch "$TEMPFILE"
+}
+
+read_all_scrapes() {
+    # will take the oldest file first so most recent lines are at the bottom
+    for bestand in "$PARENT_DIR/$DIRNAME/"*; do
+        # check if file has been loaded enough to be a usable format
+        inhoud="$(cat "$bestand")"
+        if [[ $inhoud == *"</liveboard>" ]]; then
+            echo "$inhoud" >>"$TEMPFILE"
+        fi
+    done
+
+    # if tempfile is empty, there are no scrape files. remove tempfile and end script
+    if [ ! -s "$TEMPFILE" ]; then
+        rm "$TEMPFILE"
+        exit 0
+    fi
+}
+
+transform_to_csv() {
+    # every liveboard on a newline
+    sed -i 's/<\/liveboard>/\n/g' "$TEMPFILE"
+    sed -i 's/<liveboard[^<>]\+>//g' "$TEMPFILE"
+
+    # departure stations
+    ### station URI, id, locationX, locationY & standardname
+    sed -i 's/^<station URI="[^"]\+" id="\([^"]\+\)" locationX="\([^"]\+\)" locationY="\([^"]\+\)" standardname="\([^"]\+\)">[^<>]\+<\/station>/\1;\2;\3;\4/g' "$TEMPFILE"
+
+    # destination stations
+    ### delay, canceled, left, isExtra, destID, locationX, locationY, destname
+    sed -i 's/<departure id="[^"]\+" delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station URI="[^"]\+" id="\([^"]\+\)" locationX="\([^"]\+\)" locationY="\([^"]\+\)" standardname="\([^"]\+\)">[^<>]\+<\/station>/\n\1;\2;\3;\4;\5;\6;\7;\8/g' "$TEMPFILE"
+
+    # formatting departure time, vehiclename, platform normal, platform and occupancy
+    sed -i 's/<time formatted[^<>]\+>\([^<>]\+\)<[^<>]\+><vehicle[^<>]\+>\([^<>]\+\)<\/vehicle><platform normal="\([^"]\+\)">\([^<>]\+\)<\/platform><occupancy[^<>]\+>\([^<>]\+\)<\/occupancy>.*$/;\1;\2;\3;\4;\5/g' "$TEMPFILE"
+
+    # removing the work "unknown" and "?" for unknown values and just put an empty string
+    sed -i 's/unknown\|?//g' "$TEMPFILE"
+
+    # formatting stations with zero departures
+    sed -i 's/<departures number="0"><\/departures>/\nnoDepartures/g' "$TEMPFILE"
+
+    # remove departure numbers and end of departures section
+    sed -i 's/<departures number="[0-9]\+">//g;s///g' "$TEMPFILE"
+
+    # remove empty lines
+    sed -i '/^\s*$/d' "$TEMPFILE"
+
+    # merge departures with their station, then add these to the final file
+    stationInfo=""
+    while read -r line; do
+        if [[ "$line" == "BE"* ]]; then
+            stationInfo="$line"
+        else
+            if [[ "$line" == "noDepartures" ]]; then
+                echo "$stationInfo;;;;;;;;;;;;;" >>"$TRANSFORMED"
+            else
+                echo "$stationInfo;$line" >>"$TRANSFORMED"
+            fi
+        fi
+    done <"$TEMPFILE"
+}
+
+keep_latest_info_only() {
+    # liveboard info of the same train can be received, as to no get any duplicate info
+    # and only keep the most updated data (as to account for changing delay, occupancy, etc.), 
+    # remove older lines about the same train
+
+    # a train can be uniquely identified using the departure station, the arrival station and
+    # the departure time (suppose not more than one train departs at exactly the same time
+    # from one station to another)
+
+    # sort the temporary file on these unique identifiers, then per row, check if they are equal
+    # of these identifiers are equal, only keep the last one
+    sort -t ';' -k1 -k9 -k13 "$TRANSFORMED" >"$TEMPFILE"
+
+    # add a header to transformed data file
+    echo "depID;depLocX;depLocY;depName;delay;canceled;left;isExtra;destID;destLocX;destLocY;destName;depTime;vehicleID;platformNormal;platform;occupancy" >"$TRANSFORMED"
+
+    lastline=""
+    while read -r line; do
+        thisline="$(echo "$line" | sed 's/\([^;]*;\)\([^;]*;\)\{7\}\([^;]*\);\([^;]*;\)\{3\}\([^;]*;\)[^;]*;[^;]*;[^;]*;[^;]*/\1\3\5/')"
+        if [[ "$lastline" != "$thisline" ]]; then
+            echo "$line" >>"$TRANSFORMED"
+        fi
+        lastline="$thisline"
+    done <"$TEMPFILE"
+
+    rm "$TEMPFILE"
+}
+
+#
 # Script
 #
 
-### check if there's already a directory that contains transformed data
-### if this is the case, delete everything and start over
-### We do this because starting over takes less time than checking where we left off last time
+set_up_files
 
-TRANSFORMED="$PARENT_DIR/$TRANSFORMED_DATA_DIR/$TRANSFORMED_DATA_FILE"
+read_all_scrapes
 
-if [ ! -d "$PARENT_DIR/$TRANSFORMED_DATA_DIR/" ]; then
-    mkdir "$PARENT_DIR/$TRANSFORMED_DATA_DIR/"
-fi
+transform_to_csv
 
-if [ -f "$TRANSFORMED" ]; then
-    rm "$TRANSFORMED"
-    touch "$TRANSFORMED"
-fi
-
-touch "$TEMPFILE"
-
-for bestand in "$PARENT_DIR/$DIRNAME/"*; do
-    # check if file has been loaded enough to be a usable format
-    inhoud="$(cat "$bestand")"
-    if [[ $inhoud == *"</liveboard>" ]]; then
-        echo "$inhoud" >>"$TEMPFILE"
-    fi
-    # fi
-done
-
-# if tempfile is empty, there are no scrape files. remove tempfile and end script
-if [ ! -s "$TEMPFILE" ]; then
-    rm "$TEMPFILE"
-    exit 0
-fi
-
-# every liveboard on a newline
-sed -i 's/<\/liveboard>/\n/g' "$TEMPFILE"
-sed -i 's/<liveboard[^<>]\+>//g' "$TEMPFILE"
-
-# departure stations
-### station URI, id, locationX, locationY & standardname
-sed -i 's/^<station URI="[^"]\+" id="\([^"]\+\)" locationX="\([^"]\+\)" locationY="\([^"]\+\)" standardname="\([^"]\+\)">[^<>]\+<\/station>/\1;\2;\3;\4/g' "$TEMPFILE"
-
-# destination stations
-### delay, canceled, left, isExtra, destID, locationX, locationY, destname
-sed -i 's/<departure id="[^"]\+" delay="\([^"]\+\)" canceled="\([^"]\+\)" left="\([^"]\+\)" isExtra="\([^"]\+\)"><station URI="[^"]\+" id="\([^"]\+\)" locationX="\([^"]\+\)" locationY="\([^"]\+\)" standardname="\([^"]\+\)">[^<>]\+<\/station>/\n\1;\2;\3;\4;\5;\6;\7;\8/g' "$TEMPFILE"
-
-# formatting departure time, vehiclename, platform normal, platform and occupancy
-sed -i 's/<time formatted[^<>]\+>\([^<>]\+\)<[^<>]\+><vehicle[^<>]\+>\([^<>]\+\)<\/vehicle><platform normal="\([^"]\+\)">\([^<>]\+\)<\/platform><occupancy[^<>]\+>\([^<>]\+\)<\/occupancy>.*$/;\1;\2;\3;\4;\5/g' "$TEMPFILE"
-
-# removing the work "unknown" and "?" for unknown values and just put an empty string
-sed -i 's/unknown\|?//g' "$TEMPFILE"
-
-# formatting stations with zero departures
-sed -i 's/<departures number="0"><\/departures>/\nnoDepartures/g' "$TEMPFILE"
-
-# remove departure numbers and end of departures section
-sed -i 's/<departures number="[0-9]\+">//g;s///g' "$TEMPFILE"
-
-# remove empty lines
-sed -i '/^\s*$/d' "$TEMPFILE"
-
-# merge departures with their station, then add these to the final file
-stationInfo=""
-while read -r line; do
-    if [[ "$line" == "BE"* ]]; then
-        stationInfo="$line"
-    else
-        if [[ "$line" == "noDepartures" ]]; then
-            echo "$stationInfo;;;;;;;;;;;;;" >>"$TRANSFORMED"
-        else
-            echo "$stationInfo;$line" >>"$TRANSFORMED"
-        fi
-    fi
-done <"$TEMPFILE"
-
-# for liveboard info about the same train, only keep the last one since this one will have
-# most up-to-date information about delays etc.
-### put the delay column as
-
-# what info can change for specific train
-### delayed, canceled, left, platformnormal, platform, occupancy
-### col: 5, 6, 7, 15, 16, 17, so we need to leave these out when we sort
-
-# we run through the file and keep the last line, of the regex of the unique
-# identifiers of the last line (depstation, arrstation and vehID), matches
-# the current line, make the current line the last line. if it doesnt match, the last line has
-#the most up to date info and it can be added to transformed data file
-
-sort -t ';' -k1 -k9 -k13 "$TRANSFORMED" >"$TEMPFILE"
-
-# add a header to transformed data file
-echo "depID;depLocX;depLocY;depName;delay;canceled;left;isExtra;destID;destLocX;destLocY;destName;depTime;vehicleID;platformNormal;platform;occupancy" >"$TRANSFORMED"
-
-lastline=""
-while read -r line; do
-    thisline="$(echo "$line" | sed 's/\([^;]*;\)\([^;]*;\)\{7\}\([^;]*\);\([^;]*;\)\{3\}\([^;]*;\)[^;]*;[^;]*;[^;]*;[^;]*/\1\3\5/')"
-    if [[ "$lastline" != "$thisline" ]]; then
-        echo "$line" >>"$TRANSFORMED"
-    fi
-    lastline="$thisline"
-done <"$TEMPFILE"
-
-rm "$TEMPFILE"
+keep_latest_info_only
 
 exit 0
-
-# rm "$TEMPFILE"
