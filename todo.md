@@ -9,3 +9,5 @@
 # general
 - [ ] hardcoded dirnames en filenames vermijden
 - [ ] dir en filenames ergens centraal zetten?
+- [ ] evenredigheidsfactor vinden tussen aantal treinen die vertraagd zijn en aantal treinen die ergens toekomen?
+- [ ] uren vinden waarop vertraging hoogste is (of drukte)

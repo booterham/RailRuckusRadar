@@ -16,15 +16,19 @@ set +e          # disable immediate exit on errors
 #
 # Variables
 #
-PARENT_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")"/.. ; pwd -P );
-
+PARENT_DIR=$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"/..
+    pwd -P
+)
 
 #
 # Script
 #
 
 # scrape and wait for it to finish
-/bin/bash "$PARENT_DIR/scripts/scraping.sh"
-/bin/bash "$PARENT_DIR/scripts/transforming.sh"
-python3 "$PARENT_DIR/scripts/analysis.py"
-/bin/bash "$PARENT_DIR/scripts/rapport.sh"
+while [ true ]; do
+    /bin/bash "$PARENT_DIR/scripts/scraping.sh"
+    /bin/bash "$PARENT_DIR/scripts/transforming.sh"
+    # python3 "$PARENT_DIR/scripts/analysis.py"
+    # /bin/bash "$PARENT_DIR/scripts/rapport.sh"
+done

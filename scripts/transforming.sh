@@ -77,6 +77,9 @@ transform_to_csv() {
     # removing "unknown" and "?" for unknown values and just put an empty string
     sed -i 's/unknown\|?//g' "$TEMPFILE"
 
+    # replacing occupancy strings with values that can be used in calculations
+    sed -i 's/;low$/;-1/g;s/;high$/;1/g;s/;medium$/;0/g' "$TEMPFILE"
+
     # formatting stations with zero departures
     sed -i 's/<departures number="0"><\/departures>/\n;;;;;;;;;;;;;/g' "$TEMPFILE"
 
@@ -85,6 +88,10 @@ transform_to_csv() {
 
     # remove empty lines
     sed -i '/^\s*$/d' "$TEMPFILE"
+
+    # add a header to transformed data file
+    echo "depID;depLocX;depLocY;depName;delay;canceled;left;isExtra;destID;destLocX;destLocY;destName;depTime;vehicleID;platformNormal;platform;occupancy" >"$TRANSFORMED"
+
 
     # merge departures with their station, then add these to the final file
     stationInfo=""
