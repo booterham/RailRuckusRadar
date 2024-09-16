@@ -21,6 +21,7 @@ PARENT_DIR=$(
     pwd -P
 )
 STARTTIME=$(date '+%Y%m%d-%H%M%S')
+SCRIPT_NAME=$(basename "$0")
 
 #
 # Functions
@@ -52,9 +53,21 @@ configure_stations() {
     fi
 }
 
+avoid_duplicate_instances() {
+    # Get the current script's PID
+    CURRENT_PID=$$
+
+    # Check if the script is already running (excluding the current process)
+    if pgrep -f "$SCRIPT_NAME" | grep -v "^$CURRENT_PID$" >/dev/null; then
+        exit 0
+    fi
+}
+
 #
 # Script
 #
+
+avoid_duplicate_instances
 
 configure_directories
 

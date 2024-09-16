@@ -23,6 +23,7 @@ TRANSFORMED="$PARENT_DIR/$TRANSFORMED_DATA_DIR/$TRANSFORMED_DATA_FILE"
 
 # can't use source scraping.sh here because that'll execute all of the code again. instead i'm using grep to get the hardcoded dirname
 DIRNAME=$(grep 'DIRNAME=' "$PARENT_DIR/scripts/scraping.sh" | sed 's/^.*DIRNAME="\([^"]\+\)".*$/\1/')
+SCRIPT_NAME=$(basename "$0")
 
 #
 # Functions
@@ -92,7 +93,6 @@ transform_to_csv() {
     # add a header to transformed data file
     echo "depID;depLocX;depLocY;depName;delay;canceled;left;isExtra;destID;destLocX;destLocY;destName;depTime;vehicleID;platformNormal;platform;occupancy" >"$TRANSFORMED"
 
-
     # merge departures with their station, then add these to the final file
     stationInfo=""
     while read -r line; do
@@ -132,9 +132,21 @@ transform_to_csv() {
 #     rm "$TEMPFILE"
 # }
 
+avoid_duplicate_instances() {
+    # Get the current script's PID
+    CURRENT_PID=$$
+
+    # Check if the script is already running (excluding the current process)
+    if pgrep -f "$SCRIPT_NAME" | grep -v "^$CURRENT_PID$" >/dev/null; then
+        exit 0
+    fi
+}
+
 #
 # Script
 #
+
+avoid_duplicate_instances
 
 set_up_files
 
@@ -143,5 +155,7 @@ read_all_scrapes
 transform_to_csv
 
 # keep_latest_info_only
+
+rm "$TEMPFILE"
 
 exit 0
